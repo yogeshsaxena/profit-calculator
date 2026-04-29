@@ -1,102 +1,201 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Ad Revenue Profit Calculator</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f6fa;
-      padding: 20px;
-    }
-    .container {
-      max-width: 500px;
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      margin: auto;
-    }
-    h2 {
-      text-align: center;
-    }
-    input {
-      width: 100%;
-      padding: 8px;
-      margin: 8px 0 16px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-    button {
-      width: 100%;
-      padding: 10px;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-    .result {
-      margin-top: 20px;
-      background: #f1f3f6;
-      padding: 15px;
-      border-radius: 8px;
-    }
-    .result p {
-      margin: 6px 0;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Profit Calculator</title>
+
+<style>
+  body { font-family: Inter, Arial; background:#f4f6fb; padding:20px; }
+  .container { max-width:1100px; margin:auto; }
+  h1 { margin-bottom:20px; }
+
+  .layout { display:grid; grid-template-columns:300px 1fr; gap:20px; }
+
+  .panel, .card {
+    background:white; padding:20px; border-radius:12px;
+    box-shadow:0 4px 15px rgba(0,0,0,0.05);
+  }
+
+  .field { margin-bottom:20px; }
+
+  .input-group {
+    display:flex; align-items:center;
+    border:1px solid #ccc; border-radius:6px; padding:6px;
+  }
+
+  .input-group span { margin:0 6px; color:#555; }
+  .input-group input { border:none; outline:none; width:100%; }
+
+  input[type="range"] { width:100%; }
+
+  .cards {
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:15px;
+  }
+
+  .card h3 { font-size:13px; color:#666; margin:0; }
+  .card p { font-size:20px; font-weight:bold; margin:5px 0 0; }
+
+  .profit { grid-column:span 3; text-align:center; }
+  .profit h2 { font-size:28px; margin:0; }
+</style>
 </head>
+
 <body>
 
 <div class="container">
-  <h2>Profit Calculator</h2>
+  <h1>Profit Calculator</h1>
 
-  <label>Monthly Ad Requests</label>
-  <input type="number" id="requests" placeholder="e.g. 1000000">
+  <div class="layout">
 
-  <label>Gross eCPM (USD)</label>
-  <input type="number" id="ecpm" step="0.01" placeholder="e.g. 2.5">
+    <!-- INPUT PANEL -->
+    <div class="panel">
 
-  <label>Revenue Share (%)</label>
-  <input type="number" id="revshare" placeholder="e.g. 80">
+      <div class="field">
+        <label>Total Ad Requests (Monthly)</label>
+        <div class="input-group">
+          <input id="requests" value="1,000,000" oninput="formatInput(this); sync('requests')">
+        </div>
+        <input type="range" id="requests_range" min="0" max="200000000" step="1000000" value="1000000" oninput="sync('requests')">
+      </div>
 
-  <label>Fill Rate (%)</label>
-  <input type="number" id="fillrate" placeholder="e.g. 30">
+      <div class="field">
+        <label>Gross eCPM (USD)</label>
+        <div class="input-group">
+          <span>$</span>
+          <input id="ecpm" value="2.5" oninput="sync('ecpm')">
+        </div>
+        <input type="range" id="ecpm_range" min="0" max="20" step="0.1" value="2.5" oninput="sync('ecpm')">
+      </div>
 
-  <button onclick="calculate()">Calculate</button>
+      <div class="field">
+        <label>Revenue Share %</label>
+        <div class="input-group">
+          <input id="revshare" value="80" oninput="sync('revshare')">
+          <span>%</span>
+        </div>
+        <input type="range" id="revshare_range" min="0" max="100" value="80" oninput="sync('revshare')">
+      </div>
 
-  <div class="result" id="output"></div>
+      <div class="field">
+        <label>Fill Rate %</label>
+        <div class="input-group">
+          <input id="fillrate" value="30" oninput="sync('fillrate')">
+          <span>%</span>
+        </div>
+        <input type="range" id="fillrate_range" min="0" max="100" value="30" oninput="sync('fillrate')">
+      </div>
+
+    </div>
+
+    <!-- DASHBOARD -->
+    <div>
+      <div class="cards">
+
+        <div class="card"><h3>Impressions</h3><p id="impressions"></p></div>
+        <div class="card"><h3>Gross Revenue</h3><p id="gross"></p></div>
+        <div class="card"><h3>Publisher Revenue</h3><p id="publisher"></p></div>
+        <div class="card"><h3>Silverpush Earnings</h3><p id="sp"></p></div>
+        <div class="card"><h3>Unfilled Impressions</h3><p id="unfilled"></p></div>
+        <div class="card"><h3>Ad Serving Fee</h3><p id="fee"></p></div>
+
+        <div class="card profit" id="profitCard">
+          <h2 id="profit"></h2>
+          <p id="profitPct"></p>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <script>
-function calculate() {
-  let requests = parseFloat(document.getElementById("requests").value) || 0;
-  let ecpm = parseFloat(document.getElementById("ecpm").value) || 0;
-  let revShare = (parseFloat(document.getElementById("revshare").value) || 0) / 100;
-  let fillRate = (parseFloat(document.getElementById("fillrate").value) || 0) / 100;
-
-  let impressions = requests * fillRate;
-  let grossRevenue = (ecpm * impressions) / 1000;
-  let publisherRevenue = grossRevenue * revShare;
-  let silverpushEarnings = grossRevenue - publisherRevenue;
-  let unfilled = requests - impressions;
-  let adServingFee = (0.0361 * unfilled) / 1000;
-  let profit = silverpushEarnings - adServingFee;
-
-  document.getElementById("output").innerHTML = `
-    <p><strong>Impressions (AdX):</strong> ${impressions.toFixed(0)}</p>
-    <p><strong>Gross Revenue:</strong> $${grossRevenue.toFixed(2)}</p>
-    <p><strong>Publisher Revenue:</strong> $${publisherRevenue.toFixed(2)}</p>
-    <p><strong>Silverpush Earnings:</strong> $${silverpushEarnings.toFixed(2)}</p>
-    <p><strong>Unfilled Impressions:</strong> ${unfilled.toFixed(0)}</p>
-    <p><strong>Ad Serving Fee:</strong> $${adServingFee.toFixed(2)}</p>
-    <p><strong>Profit (Silverpush):</strong> <b>$${profit.toFixed(2)}</b></p>
-  `;
+function formatNumber(num, digits=2){
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits
+  }).format(num);
 }
+
+function parseNumber(val){
+  return parseFloat(val.replace(/,/g,'')) || 0;
+}
+
+function formatInput(input){
+  let val = input.value.replace(/,/g,'');
+  if(!isNaN(val) && val !== ''){
+    input.value = new Intl.NumberFormat('en-US').format(val);
+  }
+}
+
+function sync(id){
+  const input = document.getElementById(id);
+  const range = document.getElementById(id + "_range");
+
+  let value = (id === "requests") ? parseNumber(input.value) : parseFloat(input.value) || 0;
+
+  if(event.target.type === "range"){
+    value = range.value;
+    input.value = id === "requests"
+      ? new Intl.NumberFormat('en-US').format(value)
+      : value;
+  } else {
+    range.value = value;
+  }
+
+  calc();
+}
+
+// ✅ Progressive slab fee calculation
+function calculateFee(unfilled){
+  let fee = 0;
+
+  // Slab 1: up to 50M
+  let slab1 = Math.min(unfilled, 50000000);
+  fee += (slab1 * 0.0361) / 1000;
+
+  // Slab 2: 50M to 200M
+  if(unfilled > 50000000){
+    let slab2 = Math.min(unfilled - 50000000, 150000000);
+    fee += (slab2 * 0.0206) / 1000;
+  }
+
+  return fee;
+}
+
+function calc(){
+  const r = parseNumber(document.getElementById("requests").value);
+  const ecpm = parseFloat(document.getElementById("ecpm").value) || 0;
+  const rev = (parseFloat(document.getElementById("revshare").value) || 0)/100;
+  const fill = (parseFloat(document.getElementById("fillrate").value) || 0)/100;
+
+  const impressions = r * fill;
+  const gross = (ecpm * impressions)/1000;
+  const pub = gross * rev;
+  const sp = gross - pub;
+  const unfilled = r - impressions;
+
+  const fee = calculateFee(unfilled);
+
+  const profit = sp - fee;
+  const profitPct = gross > 0 ? (profit/gross)*100 : 0;
+
+  document.getElementById("impressions").textContent = formatNumber(impressions,0);
+  document.getElementById("gross").textContent = "$" + formatNumber(gross);
+  document.getElementById("publisher").textContent = "$" + formatNumber(pub);
+  document.getElementById("sp").textContent = "$" + formatNumber(sp);
+  document.getElementById("unfilled").textContent = formatNumber(unfilled,0);
+  document.getElementById("fee").textContent = "$" + formatNumber(fee);
+  document.getElementById("profit").textContent = "$" + formatNumber(profit);
+  document.getElementById("profitPct").textContent = formatNumber(profitPct) + "%";
+
+  document.getElementById("profitCard").style.color =
+    profit >= 0 ? "#16a34a" : "#dc2626";
+}
+
+calc();
 </script>
 
 </body>
