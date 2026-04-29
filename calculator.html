@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ad Revenue Profit Calculator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f6fa;
+      padding: 20px;
+    }
+    .container {
+      max-width: 500px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin: auto;
+    }
+    h2 {
+      text-align: center;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin: 8px 0 16px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .result {
+      margin-top: 20px;
+      background: #f1f3f6;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .result p {
+      margin: 6px 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Profit Calculator</h2>
+
+  <label>Monthly Ad Requests</label>
+  <input type="number" id="requests" placeholder="e.g. 1000000">
+
+  <label>Gross eCPM (USD)</label>
+  <input type="number" id="ecpm" step="0.01" placeholder="e.g. 2.5">
+
+  <label>Revenue Share (%)</label>
+  <input type="number" id="revshare" placeholder="e.g. 80">
+
+  <label>Fill Rate (%)</label>
+  <input type="number" id="fillrate" placeholder="e.g. 30">
+
+  <button onclick="calculate()">Calculate</button>
+
+  <div class="result" id="output"></div>
+</div>
+
+<script>
+function calculate() {
+  let requests = parseFloat(document.getElementById("requests").value) || 0;
+  let ecpm = parseFloat(document.getElementById("ecpm").value) || 0;
+  let revShare = (parseFloat(document.getElementById("revshare").value) || 0) / 100;
+  let fillRate = (parseFloat(document.getElementById("fillrate").value) || 0) / 100;
+
+  let impressions = requests * fillRate;
+  let grossRevenue = (ecpm * impressions) / 1000;
+  let publisherRevenue = grossRevenue * revShare;
+  let silverpushEarnings = grossRevenue - publisherRevenue;
+  let unfilled = requests - impressions;
+  let adServingFee = (0.0361 * unfilled) / 1000;
+  let profit = silverpushEarnings - adServingFee;
+
+  document.getElementById("output").innerHTML = `
+    <p><strong>Impressions (AdX):</strong> ${impressions.toFixed(0)}</p>
+    <p><strong>Gross Revenue:</strong> $${grossRevenue.toFixed(2)}</p>
+    <p><strong>Publisher Revenue:</strong> $${publisherRevenue.toFixed(2)}</p>
+    <p><strong>Silverpush Earnings:</strong> $${silverpushEarnings.toFixed(2)}</p>
+    <p><strong>Unfilled Impressions:</strong> ${unfilled.toFixed(0)}</p>
+    <p><strong>Ad Serving Fee:</strong> $${adServingFee.toFixed(2)}</p>
+    <p><strong>Profit (Silverpush):</strong> <b>$${profit.toFixed(2)}</b></p>
+  `;
+}
+</script>
+
+</body>
+</html>
